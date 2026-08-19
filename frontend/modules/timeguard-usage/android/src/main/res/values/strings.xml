@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="tg_accessibility_label">TimeGuard — Control parental</string>
+  <string name="tg_accessibility_desc">Permite a TimeGuard pausar el dispositivo cuando se alcanza el límite diario o fuera del horario permitido.</string>
+</resources>

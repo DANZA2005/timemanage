@@ -1,0 +1,31 @@
+{
+  "summary": "Frontend-only REGRESSION run at 375x667 for TimeGuard after adding auto-sync (foreground 3-min interval + expo-background-task task in _layout via 'import @/src/lib/backgroundSync'). Objective was to confirm no crash on web/Expo Go where the native TimeguardUsage module is null (usageAvailable=false). System time ~07:28 UTC used for out-of-range window (09:00-10:00). PASS RESULTS: (1) Regression login: padre.test@timeguard.dev / Familia123 lands on ParentDashboard, Landing shows role-parent + role-monitored, no red-screen / no pageerror. The _layout side-effect import of backgroundSync (which calls TaskManager.defineTask on native only, gated by Platform.OS !== 'web') does not break the web boot. (2) Pairing focus: summary-pair -> pairing-generate produced pairing code (UC9YQZ / XBN92Q / Z3AEPA across sub-runs); pairing-close closed the modal correctly. (3) Cross-context join: fresh incognito context -> role-monitored -> join-code -> join-submit (anonymous auth) navigates to MonitoredScreen (monitored-exit visible, no crash). (4) Native fallback (web): testID native-unavailable is rendered with copy 'Se activan al instalar el build de Android (no en Expo Go).' and testID native-panel is NOT rendered. No pageerror observed on monitored context either. (5) request-more: pressing it inserts an extra_time_requests row and monitored-pending appears with 'Solicitud enviada (+30 min)'. (6) Out-of-range schedule: parent -> tab-controles -> device-chip-<latest> -> schedule-label='Fuera-de-rango', schedule-start='09:00', schedule-end='10:00' -> schedule-add. MonitoredScreen realtime-transitions to monitored-locked with title 'Fuera del horario' and copy 'El uso está permitido solo en tus horarios. Próxima franja \"Fuera-de-rango\" a las 09:00.' request-more-locked visible. (7) monitored-exit-locked (unlink) signs out anon session, clearRole runs, and monitored returns to Landing (role-parent/role-monitored visible) with no errors. registerUsageSync/unregisterUsageSync are no-ops on web (Platform.OS === 'web' short-circuit) so the exit call doesn't throw. No console errors, no React Native red-screen, 0 pageerrors captured across parent + monitored contexts.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_9.json"],
+  "action_items": [
+    "OPTIONAL (cleanup): This run left one extra device row on the parent's family (chips count grew to 3). Not blocking - device rows do not affect functionality; main agent may prune via Supabase REST with the parent token if desired."
+  ],
+  "critical_code_review_comments": [
+    "backgroundSync.ts correctly gates TaskManager.defineTask and BackgroundTask.registerTaskAsync/unregisterTaskAsync with Platform.OS !== 'web' AND usageAvailable, so importing the module from _layout.tsx is safe on web (verified: no boot error, MonitoredScreen unaffected).",
+    "MonitoredScreen.tsx auto-sync effect (lines 99-106) is guarded by !usageAvailable || !perms.usage, so on web (usageAvailable=false) it returns early without registering the task or starting the 3-minute setInterval - inert as designed.",
+    "exit() awaits unregisterUsageSync() before signOut/clearRole - on web this returns immediately (Platform.OS === 'web' guard), so unlink remains fast (~<1s to Landing). No dangling task registration observed.",
+    "nativeUsage.ts still uses requireOptionalNativeModule('TimeguardUsage') so native is null on web - usageAvailable=false is stable; the whole native-panel branch (including the new 'Se sincroniza automáticamente cada pocos minutos y en segundo plano' hint) is not rendered on web, matching the review request expectation.",
+    "MonitoredScreen.tsx (~230 lines) and ParentDashboard.tsx (~460+ lines) file-size comments from earlier iterations still apply for maintainability - non-blocking."
+  ],
+  "updated_files": ["/app/test_reports/iteration_9.json"],
+  "success_rate": {
+    "backend": "N/A (frontend-only run - Supabase RPC redeem_pairing_code + PostgREST INSERT/UPDATE on devices, extra_time_requests, schedules all worked 100% via UI-triggered calls)",
+    "frontend": "100% - all 5 review-request scenarios PASS (login regression, pairing+join+MonitoredScreen no-crash, native-unavailable-only, request+unlink, out-of-range schedule lock 'Fuera del horario')."
+  },
+  "seed_data_creation": "Created 3 pairing codes across sub-runs (Z3AEPA, XBN92Q, UC9YQZ) - each single-use. 1 device successfully joined per run; 1 schedule (Fuera-de-rango 09:00-10:00) added then deleted at teardown via schedule-delete-<id>. Device rows for TEST-Regression / TEST-Sched / TEST-Reg8 left in DB (chips visible=3 at teardown) - main agent may clean if desired.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Adding the foreground 3-min setInterval and OS background task in backgroundSync.ts is fully inert on web because Platform.OS !== 'web' gates all TaskManager/BackgroundTask calls AND MonitoredScreen's auto-sync effect exits when usageAvailable=false. Web preview shows only 'native-unavailable' alert; native-panel/panels are hidden. Real Android usage measurement + OS-level background task can only be verified in a native dev build (documented). Use two isolated contexts (Playwright browser.new_context) for parent vs monitored roles; role is determined by session.user.is_anonymous.",
+  "rca_of_issue": "N/A - regression pass. No new crashes/regressions introduced by the auto-sync feature; native module gating is correct on web/Expo Go."
+}

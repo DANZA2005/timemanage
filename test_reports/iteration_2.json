@@ -1,0 +1,20 @@
+{
+  "summary": "Frontend mobile retest completed: login loads at 375px without horizontal overflow, local validation and login/registro toggle work, and invalid Supabase credentials now return Invalid login credentials instead of Failed to fetch.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_2.json"],
+  "action_items": ["Provide a valid test account or seed a non-production test account before dashboard/session, pairing, controls, tabs and sign-out flows can be verified."],
+  "critical_code_review_comments": ["Dashboard CRUD/realtime flows remain unverified because no credentials are available; load() does not surface Supabase query errors to the UI, so authenticated data failures could appear as an empty state."],
+  "updated_files": ["/app/test_reports/iteration_2.json"],
+  "success_rate": {"backend": "not tested (frontend-only request)", "frontend": "100% of available unauthenticated checks"},
+  "seed_data_creation": "None. /app/memory/test_credentials.md contains no credentials.",
+  "retest_needed": true,
+  "should_call_test_agent_after_fix": true,
+  "context_for_next_testing_agent": "At 375x667, auth-email/auth-password/auth-submit/auth-toggle/auth-name are usable. Empty submit shows local validation. Using invalid-timeguard@outlook.com/wrongpass in login mode reaches Supabase and renders Invalid login credentials. Dashboard-dependent testIDs and flows were not exercised due to missing credentials.",
+  "rca_of_issue": "Iteration 1's Failed to fetch regression is resolved in the preview: Supabase URL/key are now exposed through EXPO_PUBLIC_* fallback and app.json extra, and the browser receives the expected auth error response. A syntactically valid non-account email was used only for negative testing; no account or seed data was created."
+}

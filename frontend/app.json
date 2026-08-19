@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "name": "TimeGuard",
+    "slug": "timeguard",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "timeguard",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "extra": {
+      "supabaseUrl": "https://slsuxbfpxitbhqdoymog.supabase.co",
+      "supabaseAnonKey": "sb_publishable_4hy8eQg2q5v9io3efUk6tg_7vhzsP1y"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.emergent.screentimecontrol.ojr0d2",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Escanea el código QR para vincular el dispositivo"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#000000"
+      },
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "PACKAGE_USAGE_STATS",
+        "POST_NOTIFICATIONS",
+        "CAMERA"
+      ],
+      "package": "com.emergent.screentimecontrol.ojr0d2"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Escanea el código QR para vincular el dispositivo"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-image.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#000000"
+        }
+      ],
+      "expo-background-task"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

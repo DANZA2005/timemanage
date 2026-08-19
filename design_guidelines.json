@@ -1,0 +1,65 @@
+{
+  "project": "TimeGuard",
+  "context": "Mobile-only Expo React Native parental-control app with Supabase-first backend and FastAPI support where needed.",
+  "phase_1_discovery": {
+    "audience": "Parents and guardians managing multiple children or monitored devices; secondary audience is children and teens receiving clear, respectful limits.",
+    "success_actions": ["Sign in or register", "See family status at a glance", "Pair a device by code or QR", "Set and edit a device limit", "Approve extra time", "Review usage and app access"],
+    "emotional_tone": "Calm authority: reassuring, warm, dependable, never surveillance-heavy or punitive.",
+    "theme": "Light-first with an optional dark mode. Use warm paper surfaces and a deep ink navigation surface; avoid cold generic SaaS styling.",
+    "design_fusion": ["Editorial newspaper hierarchy", "Tactile family-planner paper texture", "Mission-control data density"],
+    "content_strategy": "Lead with what needs attention now, then explain usage trends, then expose controls. Use plain Spanish copy and concrete times rather than abstract scores."
+  },
+  "phase_2_research": {
+    "references": [
+      {"name": "Google Family Link", "url": "https://blog.google/innovation-and-ai/technology/families/familylink-newlook/", "descriptors": ["Task-centered tabs for Screen Time and Controls", "High-level summaries with drill-downs", "Profile switching for multiple children", "Centralized requests and alerts", "Per-device and per-app controls"]},
+      {"name": "Nintendo Switch Parental Controls", "url": "https://www.nintendo.com/us/mobile-apps/parental-controls/", "descriptors": ["Daily activity history and monthly summary", "Optional automatic suspension at limit", "Simple time-plus-title reporting", "Clear distinction between notification and enforcement"]},
+      {"name": "Portal/Mobile parental dashboard", "url": "https://www.behance.net/gallery/185174609/PortalMobile-Parental-Control-Dashboard", "descriptors": ["Dedicated parent dashboard framing", "Progress overview and quick actions", "Consumer-grade visual polish"]}
+    ],
+    "decision": "Borrow the clarity and task grouping from Family Link, the explicit enforcement states from Nintendo, and the approachable overview pattern from curated dashboard work; differentiate with an editorial, warm, card-light system."
+  },
+  "typography": {
+    "heading_font": "Bodoni Moda",
+    "body_font": "IBM Plex Sans",
+    "mono_font": "IBM Plex Mono",
+    "font_loading": "Use expo-google-fonts or the project's existing font strategy; never use Inter for headings.",
+    "rules": {"h1": "36px mobile / 48px large, tight tracking, font weight 700", "h2": "28px / 34px, tight tracking", "h3": "22px / 26px", "body": "16px, line height 24px", "label": "12px uppercase, letter spacing 2px", "numbers": "IBM Plex Mono for durations, limits, codes and metrics"}
+  },
+  "colors": {
+    "archetype": "Organic & Earthy with Swiss functional accents",
+    "ink": "#17201D",
+    "ink_muted": "#53605A",
+    "paper": "#F6F2E9",
+    "surface": "#FFFDF8",
+    "sage": "#DCE7D8",
+    "forest": "#245447",
+    "terracotta": "#C9674E",
+    "ochre": "#D7A83D",
+    "sky": "#C8DDE2",
+    "danger": "#B33E38",
+    "border": "#D8D5CB",
+    "success": "#2F7656",
+    "contrast": "Use ink on paper/surface; white on forest/terracotta. Verify normal text at 4.5:1 and controls at 3:1.",
+    "forbidden": ["#7351B7", "#1B93A4", "pure #000000", "full-screen gradients"]
+  },
+  "layouts": {
+    "navigation": "Every screen has a visible solid or opaque glass header with TimeGuard wordmark, current family/profile context and a primary action. Parent bottom tabs: Resumen, Actividad, Controles, Ajustes. Child mode uses a simpler header and one clear request action.",
+    "dashboard": "Mobile-first vertical flow: family switcher overline, urgent alert strip, dominant today usage ring, horizontally scrollable device status rail, 7-day usage chart, app breakdown, recent activity. Left-align all copy.",
+    "grid": "Use a 2-column asymmetric grid where space permits: primary usage module spans 2 columns, alert/action modules span 1, app list spans 2. On narrow devices collapse to one column. Keep 24px outer padding and 16px internal gaps.",
+    "pairing": "A focused step flow: choose monitored role, show 6-character code and QR, explain expiration, confirmation state, then device nickname/profile. Never bury code expiry.",
+    "controls": "Segmented profile/device selector, limit row with duration, schedule rows, allow/deny app list, block toggle, and save action. Flat surfaces with 1px borders; no excessive cards.",
+    "lock_screen": "Monitored-device mode uses a warm solid background, large remaining/renewal message, friendly illustration-free typography, and a single Request more time button. Do not imply the child can bypass enforcement."
+  },
+  "component_name": ["TimeGuardHeader", "FamilySwitcher", "AttentionBanner", "UsageRing", "DeviceStatusRow", "WeeklyUsageChart", "AppUsageList", "ActivityTimeline", "PairingCodeSheet", "QrPairingPanel", "LimitEditor", "ScheduleEditor", "ManagedAppList", "ExtraTimeRequestRow", "LockScreen"],
+  "component_path": "Use JavaScript files under /app/frontend/app and /app/frontend/src/components; do not provide TSX-only implementation guidance. Prefer existing Expo Router and React Native primitives; use existing UI primitives when available.",
+  "visual_enhancers": ["Subtle paper grain via a low-opacity tiled texture or CSS/native overlay; decorative only and aria-hidden equivalent where applicable", "Thin rules and offset labels inspired by editorial print", "Layered ambient shadows only on floating sheets", "Small status dots with text labels; never color alone", "Avoid gradients except a tiny chart-area tint if necessary"],
+  "motion": {"entrance": "Stagger dashboard sections by 40ms with opacity and translateY", "interactions": "Press scale 0.98 and explicit color transitions on buttons, tabs and list rows", "realtime": "Pulse the status dot once when a Supabase device update arrives; do not loop indefinitely", "loading": "Use skeleton blocks with a calm shimmer", "reduced_motion": "Respect prefers-reduced-motion / AccessibilityInfo and remove stagger, pulse and shimmer when requested", "implementation": "Animate opacity and transform only; never use transition: all. Use React Native Animated or Reanimated if already installed."},
+  "supabase_data_model": {"tables": ["profiles", "families", "family_members", "devices", "device_sessions", "app_usage", "device_limits", "managed_apps", "schedules", "extra_time_requests", "notifications"], "auth": "Supabase Auth email/password", "realtime": "Subscribe to devices, device_sessions, device_limits and extra_time_requests scoped to the family", "storage": "Optional profile avatars bucket", "rls": "Every table must enforce family membership through auth.uid(); parents can manage family children/devices, monitored profiles can read their own lock/request state, and no user can access another family.", "client_rules": "Use a single Supabase client utility, loading/error/empty states, optimistic UI only with rollback, and never place service-role keys in Expo."
+  },
+  "api_and_platform": {"expo": "Portrait mobile app targeting Android phone and AndroidTV-friendly monitored UI", "fastapi": "Use only for server-side integrations that cannot safely run in the client; keep Supabase as source of truth", "native_measurement": "Real other-app measurement and device blocking require Android native permissions/services (UsageStatsManager, accessibility/device-admin or managed-device approach) and a development build; clearly show unavailable permission states in MVP.", "mocked": "If native usage measurement or blocking is not connected during MVP testing, label those flows as SIMULATED in the UI and keep data writes structurally compatible with Supabase."
+  },
+  "accessibility": ["All buttons, links, inputs, tabs, menus, alerts, metrics, requests and confirmation states include data-testid in kebab-case", "Use accessible labels and roles for icons and controls", "Never communicate status by color alone", "Minimum touch target 44x44", "Support large font sizes and dynamic type without clipping", "Use visible high-contrast focus/pressed states", "Announce realtime limit changes and request approval status", "Use a native accessible QR/code presentation and copy-code action"],
+  "media": {"images_needed": false, "image_urls": [], "guidance": "Do not add stock photography; the product is about private family data. Prefer type, linework and subtle texture. Never use placeholder image URLs."},
+  "3d_libraries": {"use": false, "reason": "This is a trust and clarity product; 3D would compete with actionable data. Use native 2D charts and lightweight SVG only.", "steps": []},
+  "general_ui_ux_design_guidelines": ["Use generous 24px screen padding and 32px section spacing", "Do not center the app container or all content", "Headers must have an opaque background; never complete transparent surfaces over content", "Use rounded corners sparingly at 12px for sheets and 8px for controls", "Use Sonner/toast equivalent for feedback where supported, with an inline fallback", "Every async state has loading, success, error and empty treatment", "Use Spanish labels such as Resumen, Tiempo de pantalla, Dispositivos, Límites, Pedir más tiempo", "Do not use AI-assistant emojis as icons", "Do not hide core desktop/web links behind a hamburger; this is mobile-only, so use bottom tabs and a compact header", "Never use placeholder content or fake logos"],
+  "instructions_to_main_agent": "Build the first screen as a useful authenticated family dashboard, not a splash image. Preserve Expo Router conventions, use .js files for new implementation guidance, wire Supabase early, add RLS migrations/configuration, and attach data-testid to every interactive and key informational element. Keep parent and monitored-device flows visually distinct while sharing tokens."
+}

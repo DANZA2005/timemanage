@@ -1,0 +1,38 @@
+{
+  "summary": "Frontend end-to-end retest at 375x667 (mobile). ALL FLOWS PASS. Schema drift previously reported (legacy NOT NULL columns on devices) is now fixed after the user's DROP CASCADE + clean recreation. Verified: (1) Login padre.test@timeguard.dev / Familia123 succeeds via [auth-email, auth-password, auth-submit]; (2) Dashboard renders WITHOUT the 'Falta preparar Supabase' error panel; (3) All 4 tabs mount and switch (tab-resumen, tab-actividad, tab-controles, tab-ajustes); (4) '+ Vincular' opens the pairing modal (pairing-code visible, no pairing-error shown), pairing-generate inserts the device (pairing-code 'UYU796' rendered, device row block-<id> appears in Resumen); (5) Block switch block-<id> toggles devices.blocked, and 'Bloqueado' persists after page reload; (6) FOCUS FEATURE — extra_time_requests: simulate-request creates a pending request-<id> card, approve-<id> transitions it to 'APROBADA' (green) and persists across reload; a second simulate-request + deny-<id> transitions to 'DENEGADA' (red) and persists across reload; (7) Cerrar sesión from Ajustes returns to the auth screen. Test data was cleaned up (device and both requests DELETEd via REST, HTTP 204). No React Native red-screen errors. No pageerrors in console.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Actividad", "issues": ["The 'DISPOSITIVOS' Stat label still wraps to two lines on a 375px viewport (screenshot attached). Cosmetic only — consider shortening to 'DISPOS.' or reducing font-size for that label."]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_6.json"],
+  "action_items": [
+    "No blocking issues. Focus feature (extra_time_requests) works end-to-end including persistence.",
+    "OPTIONAL polish: shorten 'DISPOSITIVOS' Stat label on the Actividad tab so it fits in one line at 375px.",
+    "OPTIONAL polish: /app/frontend/app/index.tsx addDevice() still shows web-hostile Alert.alert on error paths; consider keeping the inline pairing-error style also for extra_time_requests failures (createRequest / toggleBlock / decideRequest use Alert.alert).",
+    "OPTIONAL refactor: /app/frontend/app/index.tsx keeps 7 components on very long single lines (~90 lines of dense code) — split into per-component files for maintainability."
+  ],
+  "critical_code_review_comments": [
+    "index.tsx line 61 chains many awaits; usage (device_sessions) and requests fetch errors are silently swallowed (u.error and r.error are not surfaced). Non-blocking today because tables are healthy, but should be handled for defensive UX.",
+    "index.tsx line 68 realtime subscribes to extra_time_requests globally (no family filter). Fine for a small demo, but every parent will receive events for other families' rows; consider filtering client-side by device_id ∈ family devices before calling load(true).",
+    "index.tsx toggleBlock / decideRequest / createRequest use Alert.alert on error which is not modal on web. Inline error state (as already done for pairing-error) is more reliable feedback in the Expo web preview.",
+    "index.tsx signup path does not auto-sign-in when Supabase's 'Confirm email' is off — user must manually switch to login mode. Minor UX bump."
+  ],
+  "updated_files": ["/app/test_reports/iteration_6.json"],
+  "success_rate": {
+    "backend": "SELECT + INSERT + UPDATE + DELETE on devices and extra_time_requests all 100% via UI-triggered PostgREST calls and direct curl verification.",
+    "frontend": "Auth 100% · Tabs 100% · Pairing (open modal + pairing-generate + code render + DeviceRow) 100% · Block toggle + persistence 100% · Extra-time-request create/approve/deny + persistence 100% · Sign-out 100%."
+  },
+  "seed_data_creation": "Ephemeral: 1 device (0da2f55c-317b-425e-a83f-a12e832dc121) and 2 extra_time_requests created during the run, then DELETEd via REST (both returned 204). Supabase env is clean.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "TimeGuard focus feature (extra_time_requests) is fully working end-to-end via the Expo web preview at https://screen-time-control-8.preview.emergentagent.com. Login padre.test@timeguard.dev / Familia123. Full flow verified: pair device (Resumen → '+ Vincular' → pairing-generate) → block toggle persistence → tab-actividad → simulate-request → approve-<id>/deny-<id> → reload → status persists → tab-ajustes → Cerrar sesión → back to auth-email. Only remaining feedback is cosmetic (DISPOSITIVOS label wraps) and a couple of optional code-quality suggestions (see action_items).",
+  "rca_of_issue": "Not applicable — previous root cause (legacy NOT NULL columns device_name/device_type/device_uuid on public.devices) is fully resolved by the user's DROP CASCADE + clean re-create of devices, device_sessions, app_usage, device_limits, managed_apps, schedules, extra_time_requests. INSERTs now succeed (verified in UI and in curl)."
+}

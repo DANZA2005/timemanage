@@ -1,0 +1,43 @@
+{
+  "summary": "Frontend mobile retest at 375x667. Auth screen loads and login with padre.test@timeguard.dev / Familia123 succeeds against Supabase. Dashboard load immediately fails with the 'Falta preparar Supabase' error panel because the Supabase schema is only partially applied. PostgREST returns 404 for public.family_members (and several other tables), which short-circuits load() before any tab, pairing, block, extra-time-request or sign-out flow can be exercised. Pairing modal, DeviceRow block switch, simulate-request/approve/deny and Ajustes sign-out could not be validated end-to-end because they all depend on the dashboard rendering.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET https://slsuxbfpxitbhqdoymog.supabase.co/rest/v1/family_members", "issue": "PostgREST returns 404 PGRST205 'Could not find the table public.family_members in the schema cache'. This is the exact call load() makes first, so every authenticated user hits the error panel.", "priority": "CRITICAL"},
+      {"endpoint": "GET /rest/v1/device_sessions", "issue": "404 PGRST205 - table missing. Would break usage aggregation as soon as a device exists.", "priority": "CRITICAL"},
+      {"endpoint": "GET /rest/v1/app_usage", "issue": "404 PGRST205 - table missing.", "priority": "HIGH"},
+      {"endpoint": "GET /rest/v1/device_limits", "issue": "404 PGRST205 - table missing.", "priority": "HIGH"},
+      {"endpoint": "GET /rest/v1/managed_apps", "issue": "404 PGRST205 - table missing.", "priority": "HIGH"},
+      {"endpoint": "GET /rest/v1/schedules", "issue": "404 PGRST205 - table missing.", "priority": "HIGH"}
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Dashboard first load", "issue": "supabase.from('family_members').select(...) returns memberError because the table does not exist in Supabase, triggering the 'Falta preparar Supabase' error panel and blocking every downstream flow (tabs, pairing, block, requests, sign-out).", "affected_testIDs": ["tab-resumen","tab-actividad","tab-controles","tab-ajustes","pairing-code","pairing-generate","block-<id>","simulate-request","request-<id>","approve-<id>","deny-<id>"]}
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_3.json"],
+  "action_items": [
+    "Re-run the FULL /app/supabase/schema.sql against the Supabase project (slsuxbfpxitbhqdoymog). Currently only profiles, families, devices, extra_time_requests and notifications exist; family_members, device_sessions, app_usage, device_limits, managed_apps and schedules are missing, so RLS helpers (is_family_member, is_device_member) and load() cannot work.",
+    "After re-applying the schema, ensure the trigger on_auth_user_created ran for padre.test@timeguard.dev (so a profiles row exists). If not, insert one manually.",
+    "Consider reloading PostgREST schema cache (Supabase Dashboard > Database > API > 'Reload schema' or NOTIFY pgrst, 'reload schema') after DDL to avoid the PGRST205 caching gotcha.",
+    "In Index.tsx load(), when creating a family via `supabase.from('families').insert(...).select('id').single()`, check for created.error and surface it (currently a failure leaves member null and we fall through to setBusy(false) with an empty, non-error state).",
+    "Realtime handler on line 68 calls load() on any change and load() sets busy=true, so the whole dashboard flashes the spinner on every remote update. Consider a lighter refresh path.",
+    "Realtime subscription for extra_time_requests has no family/device filter and will fire for all rows the RLS lets through (fine functionally, but noisy)."
+  ],
+  "critical_code_review_comments": [
+    "Every dashboard render is gated by a single family_members query; schema drift instantly bricks the app. Add a guarded fallback UI that at minimum lets the user sign out (already present) and shows the raw Supabase error to speed debugging (currently only a generic Spanish message is shown).",
+    "Index.tsx is a single 91-line file with 6 components, ~30-column-wide lines. It works but violates the >700 line rule only trivially; readability is the real cost — recommend splitting AuthScreen, Dashboard, Summary, Activity, Controls, Settings, Pairing, DeviceRow into their own files.",
+    "supabase.ts throws at import time if EXPO_PUBLIC_SUPABASE_URL / ANON_KEY are missing; fine for prod but will crash the Metro web bundle rather than degrade gracefully."
+  ],
+  "updated_files": ["/app/test_reports/iteration_3.json"],
+  "success_rate": {"backend": "Supabase reachable, auth OK. 6/11 required tables missing (~45% schema coverage).", "frontend": "Auth screen 100%. Dashboard/pairing/requests/sign-out: 0% (blocked by backend schema)."},
+  "seed_data_creation": "None. Attempted to create a device and an extra_time_request through the UI but the dashboard never rendered because of the missing family_members table.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Credentials padre.test@timeguard.dev / Familia123 work (Supabase auth OK, session persists). Reproduce the blocker with: curl -H 'apikey: <anon>' 'https://slsuxbfpxitbhqdoymog.supabase.co/rest/v1/family_members?select=family_id&limit=1' -> HTTP 404 PGRST205. Once schema is re-applied and cache reloaded, exercise: login -> auto-create family (families+family_members insert) -> tab-resumen loads -> '+ Vincular' -> pairing-code visible -> pairing-generate creates device (DeviceRow with block-<id>) -> block toggle flips devices.blocked -> tab-actividad -> simulate-request -> request-<id> pending with approve/deny -> approve/deny updates status -> tab-ajustes -> Cerrar sesión -> back to auth-email. All testIDs are already in place in /app/frontend/app/index.tsx.",
+  "rca_of_issue": "Root cause: The Supabase schema is only partially applied to project slsuxbfpxitbhqdoymog. Executing /app/supabase/schema.sql in Supabase must have failed part-way (or an older subset was applied), leaving family_members, device_sessions, app_usage, device_limits, managed_apps and schedules missing. Dashboard.load() calls supabase.from('family_members')... first; PostgREST answers 404 PGRST205, memberError is truthy, and the app renders the 'Falta preparar Supabase' panel, hiding every other tested flow. Mitigation: paste the entire schema.sql into Supabase SQL editor and run it (idempotent thanks to create table if not exists / create policy is not idempotent — drop existing policies first if re-running). Then NOTIFY pgrst, 'reload schema'; verify with the curl loop in this report."
+}
